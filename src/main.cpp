@@ -39,9 +39,9 @@ const byte r_min = 28;  // Length of minute-hand
 const byte r_hr  = 16;  // Length of hour-hand
 
 //Arrays to store coordinates of arm pixels, so we can remove them again
-point lastSec[60];
-point lastMin[60];
-point lastHr[60];
+point lastSec[30];
+point lastMin[30];
+point lastHr[30];
 
 
 //Initialize the RGBMatrix
@@ -83,23 +83,41 @@ float deg2rad(float deg) {
     return (deg * 3.1415 / 180);
 }
 
+//Check array for specific pixel
+bool checkArray(point a[], point b) {
+    byte length = 30;
+    for (int i = 0; i < length; i++) {
+        if (a[i].x == b.x) {
+            if (a[i].y  == b.y) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 //Clears the arm pixels
 void clearPixels(armType arm) {
     for (int i = 0; i < 60; ++i) {
         if (arm == SEC) {
+            if(checkArray(lastMin, point{lastSec[i].x,lastSec[i].y})) continue;
+            if(checkArray(lastHr, point{lastSec[i].x,lastSec[i].y})) continue;
             matrix.drawPixel(lastSec[i].x,lastSec[i].y, matrix.Color333(0, 0, 0));
         }
 
         if (arm == MIN) {
+            if(checkArray(lastHr, point{lastSec[i].x,lastSec[i].y})) continue;
             matrix.drawPixel(lastMin[i].x,lastMin[i].y, matrix.Color333(0, 0, 0));
         }
 
         if (arm == HR) {
+            if(checkArray(lastMin, point{lastSec[i].x,lastSec[i].y})) continue;
             matrix.drawPixel(lastHr[i].x,lastHr[i].y, matrix.Color333(0, 0, 0));
         }
 
     }
 }
+
 
 
 void drawAwareLine(byte x0, byte y0, byte x1, byte y1, armType arm) {
@@ -144,16 +162,24 @@ void drawAwareLine(byte x0, byte y0, byte x1, byte y1, armType arm) {
         if (pixelState[newx][newy] == 0) {
 
             if (arm == SEC) {
+                //Check if pixel is already drawn by another arm
+                if(checkArray(lastMin, point{newx,newy})) continue;
+                if (checkArray(lastHr, point{newx,newy})) continue;
+
 
                 matrix.drawPixel(newx, newy, matrix.Color333(7, 0, 0));
                 lastSec[i] = {newx, newy};
             }
             if (arm == MIN) {
+                //Check if pixel is already drawn by another arm
+                if (checkArray(lastHr, point{newx,newy})) continue;
 
                 matrix.drawPixel(newx, newy, matrix.Color333(7, 7, 7));
                 lastMin[i] = {newx, newy};
             }
             if (arm == HR) {
+                //Check if pixel is already drawn by another arm
+                if(checkArray(lastMin, point{newx,newy})) continue;
 
                 matrix.drawPixel(newx, newy, matrix.Color333(7, 7, 7));
                 lastHr[i] = {newx, newy};
